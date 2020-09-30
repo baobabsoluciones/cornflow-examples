@@ -29,7 +29,7 @@ model_cycle_time += vCycleTime, "Objetive"
 # Starting up cornflow client
 config = dict(email=email, pwd=pwd, name=name)
 
-client = CornFlow(url="http://34.78.205.34:5000/")
+client = CornFlow(url="CORNFLOW_WEB_SERVER_URL")
 # client.sign_up(**config)
 client.login(email, pwd)
 
