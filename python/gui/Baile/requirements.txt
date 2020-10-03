@@ -1,5 +1,0 @@
-PySide2
-PuLP
-pytups
-networkx
-matplotlib
