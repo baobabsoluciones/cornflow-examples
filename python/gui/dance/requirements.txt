@@ -1,0 +1,6 @@
+PySide2
+PuLP
+pytups
+networkx
+matplotlib
+cornflow_client>=0.0.6
