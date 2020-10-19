@@ -69,7 +69,7 @@ def graph_solution(data, solution, path='path.png'):
     edges = data['pairs']
     G.add_nodes_from(solution_colored)
     G.add_edges_from(edges)
-    plt.show()
+    # plt.show()
     options = {"node_size": 500}
     pos = nx.spring_layout(G)  # positions for all nodes
     nx.draw_networkx_nodes(G=G, pos=pos, node_color=node_colors, **options)

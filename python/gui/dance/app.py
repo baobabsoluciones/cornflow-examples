@@ -6,6 +6,7 @@ import os
 import logging
 import gui
 import model as md
+import logging as log
 
 
 REFERENCE_ID_CODE = 256
@@ -17,6 +18,14 @@ class MainWindow_EXCEC():
 
     def __init__(self):
         self.app = QtWidgets.QApplication(sys.argv)
+        self.logger = log.getLogger('appLog')
+        logFormat = '%(asctime)s %(levelname)s:%(message)s'
+        formatter = log.Formatter(logFormat)
+        stderr_log_handler = log.StreamHandler()
+        stderr_log_handler.setFormatter(formatter)
+        _log = log.getLogger()
+        _log.handlers = [stderr_log_handler]
+
         MainWindow = QtWidgets.QMainWindow()
 
         # set icon
@@ -55,6 +64,7 @@ class MainWindow_EXCEC():
         self.ui.signup.clicked.connect(self.signup)
         self.ui.login.clicked.connect(self.login)
         self.ui.logout.clicked.connect(self.logout)
+        self.ui.checkBoxDebug.clicked.connect(self.update_ui)
 
         MainWindow.show()
         sys.exit(self.app.exec_())
@@ -88,6 +98,12 @@ class MainWindow_EXCEC():
             self.ui.username.setEnabled(True)
             self.ui.password.setEnabled(True)
             self.ui.server.setEnabled(True)
+        if self.ui.checkBoxDebug.isChecked():
+            level = log.DEBUG
+        else:
+            level = log.INFO
+        _log = log.getLogger()
+        _log.setLevel(level)
         return 1
 
     def choose_file(self):
@@ -146,7 +162,8 @@ class MainWindow_EXCEC():
             return self.show_message('Login first!', "You need to login before doing anything")
 
         instances = self.client.get_all_instances()
-        instances.sort(key=lambda v: v['created_at'])
+        if instances is not None:
+            instances.sort(key=lambda v: v['created_at'])
         # TODO: color if it has results
 
         #
@@ -317,7 +334,7 @@ if __name__ == "__main__":
     # for pyside2:
     # Migration to pyside2:
     # https://www.learnpyqt.com/blog/pyqt5-vs-pyside2/
-    # pyside2-uic desktop_app/gui.ui -o desktop_app/gui.py
+    # pyside2-uic gui.ui -o gui.py
     MainWindow_EXCEC()
 
 

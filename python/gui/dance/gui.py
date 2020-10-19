@@ -146,6 +146,11 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_8.addWidget(self.logout)
 
+        self.checkBoxDebug = QCheckBox(self.Config)
+        self.checkBoxDebug.setObjectName(u"checkBoxDebug")
+
+        self.horizontalLayout_8.addWidget(self.checkBoxDebug)
+
 
         self.verticalLayout.addLayout(self.horizontalLayout_8)
 
@@ -260,13 +265,14 @@ class Ui_MainWindow(object):
         self.solCheck.setText(QCoreApplication.translate("MainWindow", u"No solution loaded", None))
         self.label_222.setText(QCoreApplication.translate("MainWindow", u"Server", None))
         self.server.setText(QCoreApplication.translate("MainWindow", u"http://localhost:5000", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"email", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Email", None))
         self.username.setText(QCoreApplication.translate("MainWindow", u"some_email@gmail.com", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Password", None))
         self.password.setText(QCoreApplication.translate("MainWindow", u"some_password", None))
-        self.login.setText(QCoreApplication.translate("MainWindow", u"login", None))
-        self.signup.setText(QCoreApplication.translate("MainWindow", u"signup", None))
-        self.logout.setText(QCoreApplication.translate("MainWindow", u"logout", None))
+        self.login.setText(QCoreApplication.translate("MainWindow", u"Login", None))
+        self.signup.setText(QCoreApplication.translate("MainWindow", u"Signup", None))
+        self.logout.setText(QCoreApplication.translate("MainWindow", u"Logout", None))
+        self.checkBoxDebug.setText(QCoreApplication.translate("MainWindow", u"Debug", None))
         self.get_instances.setText(QCoreApplication.translate("MainWindow", u"Update instances", None))
         self.send_instance.setText(QCoreApplication.translate("MainWindow", u"Send instance", None))
         self.solve_instance.setText(QCoreApplication.translate("MainWindow", u"Solve instance", None))

@@ -152,7 +152,7 @@
             <item row="1" column="0">
              <widget class="QLabel" name="label">
               <property name="text">
-               <string>email</string>
+               <string>Email</string>
               </property>
              </widget>
             </item>
@@ -203,21 +203,28 @@
             <item>
              <widget class="QPushButton" name="login">
               <property name="text">
-               <string>login</string>
+               <string>Login</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="signup">
               <property name="text">
-               <string>signup</string>
+               <string>Signup</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="logout">
               <property name="text">
-               <string>logout</string>
+               <string>Logout</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBoxDebug">
+              <property name="text">
+               <string>Debug</string>
               </property>
              </widget>
             </item>
