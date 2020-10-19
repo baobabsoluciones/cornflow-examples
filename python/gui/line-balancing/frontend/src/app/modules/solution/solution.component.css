@@ -1,0 +1,28 @@
+
+
+.mat-table {
+  display: table;
+  width: 95%;
+}
+
+
+mat-toolbar {
+  background: inherit;
+  padding-top: 20px;
+  padding-right: 30px;
+}
+
+mat-paginator {
+  background: inherit;
+}
+
+/*td.mat-cell:last-of-type,
+th.mat-header-cell:last-of-type {
+  padding-right: 0;
+  text-align: right;
+}*/
+
+.menu-without-scroll {
+  overflow: hidden !important;
+  max-width: none !important;
+}

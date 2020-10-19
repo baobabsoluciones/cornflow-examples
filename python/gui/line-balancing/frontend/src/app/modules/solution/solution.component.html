@@ -1,0 +1,31 @@
+<div class="main-95">
+  <div class="cabecera-div">
+    <h1 class="cabecera-h1">Solution</h1>
+  </div>
+
+  <div class="column">
+    <mat-table #sortTable="matSort" [dataSource]="dataSource" matSort matSortActive="name" matSortDirection="asc">
+      <ng-container matColumnDef="station_name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Station</th>
+        <td mat-cell *matCellDef="let element">{{element.station_name}}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="task_name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Task</th>
+        <td mat-cell *matCellDef="let element">{{element.task_name}}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+    </mat-table>
+    <mat-toolbar>
+      <mat-toolbar-row>
+        <span class="left-spacer"></span>
+        <span class="spacer"></span>
+        <mat-paginator #paginatorTable [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons></mat-paginator>
+
+      </mat-toolbar-row>
+    </mat-toolbar>
+  </div>
+</div>
