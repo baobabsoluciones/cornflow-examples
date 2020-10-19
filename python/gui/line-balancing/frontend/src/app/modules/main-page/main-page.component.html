@@ -1,0 +1,30 @@
+<mat-toolbar class="toolbar">
+  <mat-toolbar-row>
+    <button type="button" aria-label="Toggle sidenav" mat-icon-button (click)="drawer.toggle(); changepad()"
+      class="sidenav-button"></button>
+  </mat-toolbar-row>
+</mat-toolbar>
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav #drawer class="sidenav" mode="side" opened role="navigation">
+    <mat-nav-list class="lateral">
+      <a class="navigation-item" mat-list-item routerLink="./stations" routerLinkActive="active">
+        <mat-icon class="icon-menu">timeline</mat-icon><span class="navigation-item-label">Stations</span>
+      </a>
+      <a class="navigation-item" mat-list-item routerLink="./tasks" routerLinkActive="active">
+        <mat-icon class="icon-menu">timeline</mat-icon><span class="navigation-item-label">Tasks</span>
+      </a>
+      <a class="navigation-item" mat-list-item routerLink="./precedences" routerLinkActive="active">
+        <mat-icon class="icon-menu">timeline</mat-icon><span class="navigation-item-label">Precedences</span>
+      </a>
+      <a class="navigation-item" mat-list-item routerLink="./solution" routerLinkActive="active">
+        <mat-icon class="icon-menu">timeline</mat-icon><span class="navigation-item-label">Solution</span>
+      </a>
+      <a class="navigation-item" mat-list-item (click)="solve()">
+        <mat-icon class="icon-menu">send</mat-icon><span class="navigation-item-label">Solve</span>
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content [ngClass]="pad == 1 ? 'pad60' : 'pad0'">
+    <router-outlet (activate)="onActivate($event)"></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>

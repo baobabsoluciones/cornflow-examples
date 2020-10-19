@@ -1,0 +1,174 @@
+/*
+PROPERTIES
+*/
+
+
+
+
+/* You can add global styles to this file, and also import other style files */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto !important;
+}
+
+h1.cabecera,
+h1.cabecera2 {
+  font-family: Roboto;
+  font-weight: 500;
+  line-height: 44px;
+}
+.cabecera {
+  margin: 15px auto;
+  width: 90%;
+  text-align: left;
+  display: flex;
+}
+.cabecera2 {
+  margin: 0px 0px;
+  display: flex;
+  color: #00205B;
+  
+}
+
+.list .mat-list .mat-list-item .mat-multi-line .mat-list-item-content {
+  font-family: Roboto !important;
+}
+
+a {
+  font-family: Roboto !important;
+}
+
+.mat-drawer-content {
+  background: white;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.mat-toolbar {
+  width: 90%;
+  margin: 0 auto;
+}
+
+.mat-toolbar-multiple-rows {
+  padding-right: 15px;
+}
+
+.icon-header {
+  font-size: 40px;
+}
+
+.icon-header.mat-icon.notranslate.material-icons.mat-icon-no-color {
+  padding-right: 25px;
+}
+
+.spacer-px {
+  padding-left: 20px
+}
+
+.material-icons {
+  padding-right: 0px;
+}
+
+.icon-menu {
+  padding-right: 8px;
+}
+
+.cabecera-div {
+  margin: 15px auto;
+  width: 95%;
+  text-align: left;
+  display: flex;
+}
+
+.cabecera-h1 {
+  margin: 0px 0px;
+  display: flex;
+  color: #00205B;
+}
+
+.main-50-left {
+  float: left;
+  width: 50%;
+  height: 100%;
+}
+
+.main-95 {
+  float: none;
+  width: 100%;
+  height: 95%;
+}
+.main {
+  float: none;
+  width: 100%;
+  height: 100%;
+}
+.mat-table:not(.route-detail) {
+  font-family: Roboto;
+  margin: 0 auto;
+  box-shadow: 0 0px 10px 2px rgba(0, 0, 0, .2),
+    0 0px 10px 2px rgba(0, 0, 0, .14),
+    0 0px 10px 2px rgba(0, 0, 0, .12);
+}
+
+th,
+td {
+  vertical-align: middle;
+}
+
+.mat-column-address {
+  word-wrap: break-word !important;
+  white-space: unset !important;
+  flex: 0 0 90% !important;
+  width: 60% !important;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+
+  word-break: break-word;
+
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+.toolbar {
+  background-color: #00205b;
+  min-height: 6vh;
+}
+
+.sidenav-button {
+  color: white
+}
+
+.mat-toolbar-row {
+  height: 6vh;
+}
+
+.mat-list-item {
+  font-family: Roboto;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.sidenav-container {
+  height: 100%;
+}
+
+.transparent .mat-dialog-container {
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0) !important;
+  background: rgba(0, 0, 0, 0) !important;
+} 
