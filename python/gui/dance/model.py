@@ -92,10 +92,27 @@ def read_file(filePath):
     nodes = range(num_nodes)
     return dict(nodes=nodes, pairs=pairs)
 
-if __name__ == '__main__':
-    fileName = './python/gui/Baile/data/gc_4_1'
+
+def export_json(fileName):
+    import json
+    data = read_file(fileName)
+    model_dict = build_model(data)
+    with open(fileName + '.json', 'w') as f:
+        json.dump(model_dict, f)
+
+
+def solve_graph(fileName):
     data = read_file(fileName)
     model_dict = build_model(data)
     model_dict = solve_model(model_dict)
     solution = get_solution_from_model(model_dict)
     graph_solution(data, solution)
+
+
+if __name__ == '__main__':
+    name = 'gc_50_5'
+    fileName = './python/gui/dance/data/' + name
+    # solve_graph(fileName)
+    export_json(fileName)
+
+

@@ -17,7 +17,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(578, 691)
+        MainWindow.resize(578, 697)
         self.actionOpen_from = QAction(MainWindow)
         self.actionOpen_from.setObjectName(u"actionOpen_from")
         self.actionExit = QAction(MainWindow)
@@ -169,25 +169,64 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.send_instance)
 
-        self.solve_instance = QPushButton(self.Config)
-        self.solve_instance.setObjectName(u"solve_instance")
-
-        self.horizontalLayout.addWidget(self.solve_instance)
-
 
         self.verticalLayout_5.addLayout(self.horizontalLayout)
 
         self.instances = QListView(self.Config)
         self.instances.setObjectName(u"instances")
+        self.instances.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         self.verticalLayout_5.addWidget(self.instances)
 
 
         self.verticalLayout.addLayout(self.verticalLayout_5)
 
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.horizontalLayout_6.setContentsMargins(-1, 5, -1, 5)
+        self.formLayout_2 = QFormLayout()
+        self.formLayout_2.setObjectName(u"formLayout_2")
+        self.formLayout_2.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.formLayout_2.setContentsMargins(-1, 5, -1, 5)
+        self.label_3 = QLabel(self.Config)
+        self.label_3.setObjectName(u"label_3")
+
+        self.formLayout_2.setWidget(0, QFormLayout.LabelRole, self.label_3)
+
+        self.maxTime = QLineEdit(self.Config)
+        self.maxTime.setObjectName(u"maxTime")
+
+        self.formLayout_2.setWidget(0, QFormLayout.FieldRole, self.maxTime)
+
+        self.label_4 = QLabel(self.Config)
+        self.label_4.setObjectName(u"label_4")
+
+        self.formLayout_2.setWidget(1, QFormLayout.LabelRole, self.label_4)
+
+        self.solver = QComboBox(self.Config)
+        self.solver.setObjectName(u"solver")
+
+        self.formLayout_2.setWidget(1, QFormLayout.FieldRole, self.solver)
+
+
+        self.horizontalLayout_6.addLayout(self.formLayout_2)
+
+        self.solve_instance = QPushButton(self.Config)
+        self.solve_instance.setObjectName(u"solve_instance")
+
+        self.horizontalLayout_6.addWidget(self.solve_instance)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_6)
+
         self.verticalLayout_6 = QVBoxLayout()
         self.verticalLayout_6.setContentsMargins(5, 5, 5, 5)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.executions = QListView(self.Config)
+        self.executions.setObjectName(u"executions")
+
+        self.verticalLayout_6.addWidget(self.executions)
+
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setContentsMargins(2, 2, 2, 2)
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
@@ -201,13 +240,18 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5.addWidget(self.show_solution)
 
+        self.showLog = QPushButton(self.Config)
+        self.showLog.setObjectName(u"showLog")
+
+        self.horizontalLayout_5.addWidget(self.showLog)
+
+        self.showStats = QPushButton(self.Config)
+        self.showStats.setObjectName(u"showStats")
+
+        self.horizontalLayout_5.addWidget(self.showStats)
+
 
         self.verticalLayout_6.addLayout(self.horizontalLayout_5)
-
-        self.executions = QListView(self.Config)
-        self.executions.setObjectName(u"executions")
-
-        self.verticalLayout_6.addWidget(self.executions)
 
 
         self.verticalLayout.addLayout(self.verticalLayout_6)
@@ -275,9 +319,13 @@ class Ui_MainWindow(object):
         self.checkBoxDebug.setText(QCoreApplication.translate("MainWindow", u"Debug", None))
         self.get_instances.setText(QCoreApplication.translate("MainWindow", u"Update instances", None))
         self.send_instance.setText(QCoreApplication.translate("MainWindow", u"Send instance", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Max time", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Solver", None))
         self.solve_instance.setText(QCoreApplication.translate("MainWindow", u"Solve instance", None))
         self.get_results.setText(QCoreApplication.translate("MainWindow", u"Get results", None))
         self.show_solution.setText(QCoreApplication.translate("MainWindow", u"Show solution", None))
+        self.showLog.setText(QCoreApplication.translate("MainWindow", u"Show log", None))
+        self.showStats.setText(QCoreApplication.translate("MainWindow", u"Show statistics", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Config), QCoreApplication.translate("MainWindow", u"Config", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
     # retranslateUi
