@@ -1,4 +1,4 @@
-from input_data import data as default_data
+from default_data import data as default_data
 from pulp import *
 from cornflow_client import CornFlow, group_variables_by_name
 import time
