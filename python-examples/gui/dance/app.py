@@ -197,9 +197,9 @@ class MainWindow_EXCEC():
         model = QtGui.QStandardItemModel(self.ui.instances)
         for inst in instances:
             item = QtGui.QStandardItem(inst['name'] + ' ' + inst['created_at'])
-            item.setData(inst['reference_id'], REFERENCE_ID_CODE)
-            item.setData(inst['executions'], EXECUTIONS_CODE)
-            self.update_row_inst(item, len(inst['executions']))
+            item.setData(inst['id'], REFERENCE_ID_CODE)
+            # item.setData(inst['executions'], EXECUTIONS_CODE)
+            # self.update_row_inst(item, len(inst['executions']))
             model.appendRow(item)
         self.ui.instances.setModel(model)
 
@@ -229,7 +229,7 @@ class MainWindow_EXCEC():
             return
         instance_id = item_id.data(REFERENCE_ID_CODE)
         result = self.client.delete_one_instance(instance_id)
-        if result.status_code == 204:
+        if result.status_code == 200:
             item = self.ui.instances.model().itemFromIndex(item_id)
             self.ui.instances.model().removeRow(item.row())
         else:
@@ -254,36 +254,50 @@ class MainWindow_EXCEC():
         if not self.token:
             return self.show_message('Login first!', "You need to login before doing anything")
         instance = self.ui.instances.currentIndex()
-        if not instance.data(REFERENCE_ID_CODE):
+        instance_id = instance.data(REFERENCE_ID_CODE)
+        if not instance_id:
             return
         model = QtGui.QStandardItemModel(self.ui.executions)
-        executions = instance.data(EXECUTIONS_CODE)
+        details = self.client.get_one_instance(instance_id)
+        executions = details['executions']
         for exec in executions:
-            item = QtGui.QStandardItem(exec['created_at'])
-            item.setData(exec['reference_id'], REFERENCE_ID_CODE)
+            config = exec['config']
+            name = "{} +{} @ {}".format(config.get('solver', ''),
+                                       config.get('timeLimit', 0),
+                                       exec['created_at'])
+            item = QtGui.QStandardItem(name)
+            item.setData(exec['id'], REFERENCE_ID_CODE)
             green_brush = get_brush('green')
             red_brush = get_brush('red')
-            if exec['execution_results']:
-                item.setForeground(green_brush)
-            else:
-                item.setForeground(red_brush)
+            yellow_brush = get_brush('yellow')
+            colors = \
+                {1: green_brush,
+                 0: yellow_brush,}
+            color = colors.get(exec['state'], red_brush)
+            item.setForeground(color)
             model.appendRow(item)
         self.ui.executions.setModel(model)
 
     def get_results(self):
         execution = self.ui.executions.currentIndex()
-        if not execution.data(REFERENCE_ID_CODE):
-            return
         execution_id = execution.data(REFERENCE_ID_CODE)
+        if not execution_id:
+            return
         # QtCore.Qt.ItemDataRole.DisplayRole
         # QtCore.Qt.DisplayRole
-        response = self.client.get_results(execution_id)
-        if not response['execution_results']:
+        results = self.client.get_results(execution_id)
+        if results['state'] != 1:
             self.solution = None
             self.update_ui()
             return self.show_message('No results', "This execution has no solution (yet?)")
-        model_dict = response['execution_results']
-        self.solution_log = response['log_json']
+        response = self.client.get_solution(execution_id)
+        if not response['data']:
+            self.solution = None
+            self.update_ui()
+            return self.show_message('No results', "This execution has no solution (yet?)")
+        model_dict = response['data']
+        log_json = self.client.get_api_for_id('execution/', execution_id, 'log')
+        self.solution_log = log_json.json()['log']
         self.solution_log['progress'] = self.progress_to_dataframe(log_progress=self.solution_log['progress'])
 
         self.solution = md.get_solution_from_model(model_dict)
@@ -291,9 +305,7 @@ class MainWindow_EXCEC():
 
     @staticmethod
     def progress_to_dataframe(log_progress):
-        import ast
-        correct = {key: ast.literal_eval(value) for key, value in log_progress.items()}
-        return pd.DataFrame.from_dict(correct)
+        return pd.DataFrame.from_dict(log_progress)
 
     def show_message(self, title, text, icon='critical'):
         msg = QtWidgets.QMessageBox()
@@ -337,6 +349,10 @@ class MainWindow_EXCEC():
             return self.show_message('Error in response', "The api returned an error: {}".format(e))
 
     def show_solution(self):
+        if not self.instance:
+            return self.show_message('Error showing solution', "You need to load an instance first!")
+        if not self.solution:
+            return self.show_message('Error showing solution', "You need to load a solution first!")
         md.graph_solution(self.instance, self.solution, path='path.png')
         self.solutionPicture = QtWidgets.QLabel(text="<img src='path.png' />")
         self.solutionPicture.show()
