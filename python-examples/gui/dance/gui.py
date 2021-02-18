@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'gui.ui'
 ##
-## Created by: Qt User Interface Compiler version 5.15.1
+## Created by: Qt User Interface Compiler version 5.15.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -155,8 +155,8 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.horizontalLayout_8)
 
         self.verticalLayout_5 = QVBoxLayout()
-        self.verticalLayout_5.setContentsMargins(3, 3, 3, 3)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.verticalLayout_5.setContentsMargins(3, 3, 3, 3)
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.get_instances = QPushButton(self.Config)
@@ -220,16 +220,16 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.horizontalLayout_6)
 
         self.verticalLayout_6 = QVBoxLayout()
-        self.verticalLayout_6.setContentsMargins(5, 5, 5, 5)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.verticalLayout_6.setContentsMargins(5, 5, 5, 5)
         self.executions = QListView(self.Config)
         self.executions.setObjectName(u"executions")
 
         self.verticalLayout_6.addWidget(self.executions)
 
         self.horizontalLayout_5 = QHBoxLayout()
-        self.horizontalLayout_5.setContentsMargins(2, 2, 2, 2)
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.horizontalLayout_5.setContentsMargins(2, 2, 2, 2)
         self.get_results = QPushButton(self.Config)
         self.get_results.setObjectName(u"get_results")
 
@@ -245,10 +245,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5.addWidget(self.showLog)
 
-        self.showStats = QPushButton(self.Config)
-        self.showStats.setObjectName(u"showStats")
+        self.exportLog = QPushButton(self.Config)
+        self.exportLog.setObjectName(u"exportLog")
 
-        self.horizontalLayout_5.addWidget(self.showStats)
+        self.horizontalLayout_5.addWidget(self.exportLog)
 
 
         self.verticalLayout_6.addLayout(self.horizontalLayout_5)
@@ -266,7 +266,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 578, 25))
+        self.menubar.setGeometry(QRect(0, 0, 578, 22))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         MainWindow.setMenuBar(self.menubar)
@@ -324,8 +324,8 @@ class Ui_MainWindow(object):
         self.solve_instance.setText(QCoreApplication.translate("MainWindow", u"Solve instance", None))
         self.get_results.setText(QCoreApplication.translate("MainWindow", u"Get results", None))
         self.show_solution.setText(QCoreApplication.translate("MainWindow", u"Show solution", None))
-        self.showLog.setText(QCoreApplication.translate("MainWindow", u"Show log", None))
-        self.showStats.setText(QCoreApplication.translate("MainWindow", u"Show statistics", None))
+        self.showLog.setText(QCoreApplication.translate("MainWindow", u"Show progress", None))
+        self.exportLog.setText(QCoreApplication.translate("MainWindow", u"Export log", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Config), QCoreApplication.translate("MainWindow", u"Config", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
     # retranslateUi

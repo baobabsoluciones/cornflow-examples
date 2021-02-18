@@ -232,7 +232,16 @@
           </item>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_5">
-            <property name="margin">
+            <property name="leftMargin">
+             <number>3</number>
+            </property>
+            <property name="topMargin">
+             <number>3</number>
+            </property>
+            <property name="rightMargin">
+             <number>3</number>
+            </property>
+            <property name="bottomMargin">
              <number>3</number>
             </property>
             <item>
@@ -320,7 +329,16 @@
           </item>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_6">
-            <property name="margin">
+            <property name="leftMargin">
+             <number>5</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>5</number>
+            </property>
+            <property name="bottomMargin">
              <number>5</number>
             </property>
             <item>
@@ -328,7 +346,16 @@
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_5">
-              <property name="margin">
+              <property name="leftMargin">
+               <number>2</number>
+              </property>
+              <property name="topMargin">
+               <number>2</number>
+              </property>
+              <property name="rightMargin">
+               <number>2</number>
+              </property>
+              <property name="bottomMargin">
                <number>2</number>
               </property>
               <item>
@@ -348,14 +375,14 @@
               <item>
                <widget class="QPushButton" name="showLog">
                 <property name="text">
-                 <string>Show log</string>
+                 <string>Show progress</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="showStats">
+               <widget class="QPushButton" name="exportLog">
                 <property name="text">
-                 <string>Show statistics</string>
+                 <string>Export log</string>
                 </property>
                </widget>
               </item>
@@ -377,7 +404,7 @@
      <x>0</x>
      <y>0</y>
      <width>578</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

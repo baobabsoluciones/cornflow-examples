@@ -45,6 +45,7 @@ class MainWindow_EXCEC():
         self.instance = None
         self.solution = None
         self.solution_log = None
+        self.solution_progress = None
         self.client = None
         self.token = None
         self.config = dict(threads=1)
@@ -87,11 +88,11 @@ class MainWindow_EXCEC():
         self.ui.maxTime.textEdited.connect(self.update_ui)
 
         self.ui.showLog.clicked.connect(self.show_log)
-        self.ui.showStats.clicked.connect(self.show_stats)
+        self.ui.exportLog.clicked.connect(self.export_log_file)
+        # exportLog
 
         MainWindow.show()
         sys.exit(self.app.exec_())
-
 
     def update_ui(self):
 
@@ -134,6 +135,26 @@ class MainWindow_EXCEC():
         _log = log.getLogger()
         _log.setLevel(level)
         return 1
+
+    def export_file(self, data_json):
+        QFileDialog = QtWidgets.QFileDialog
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName = QFileDialog.getSaveFileName(
+            caption="Choose a file to export",
+            dir=self.examplesDir,
+            options=options)
+        try:
+            fileName = fileName[0]
+        except IndexError:
+            return
+        self.save_file(fileName, data_json)
+        return True
+
+    def export_log_file(self):
+        if not self.solution_log:
+            return self.show_message('No log read', "No log was read from the solution :(")
+        self.export_file(self.solution_log)
 
     def choose_file(self):
         QFileDialog = QtWidgets.QFileDialog
@@ -298,7 +319,7 @@ class MainWindow_EXCEC():
         model_dict = response['data']
         log_json = self.client.get_api_for_id('execution/', execution_id, 'log')
         self.solution_log = log_json.json()['log']
-        self.solution_log['progress'] = self.progress_to_dataframe(log_progress=self.solution_log['progress'])
+        self.solution_progress = self.progress_to_dataframe(log_progress=self.solution_log['progress'])
 
         self.solution = md.get_solution_from_model(model_dict)
         self.update_ui()
@@ -316,6 +337,21 @@ class MainWindow_EXCEC():
         msg.setWindowTitle(title)
         retval = msg.exec_()
         return
+
+    def save_file(self, fileName, data_json):
+        directory = os.path.dirname(fileName)
+        if not os.path.exists(directory):
+            self.show_message(title="No directory", text="The directory to the file needs to exist.")
+            return False
+        try:
+            with open(fileName, 'w') as f:
+                json.dump(data_json, f)
+        except Exception as e:
+            self.show_message(title="Error in file while writing",
+                              text="There's been an error writing the output file:\n{}.".format(e))
+            return False
+        return True
+        # with open
 
     def load_file(self, fileName):
 
@@ -361,7 +397,7 @@ class MainWindow_EXCEC():
         if not self.solution_log:
             return self.show_message('No log read', "No log was read from the solution :(")
         self.view = QtWidgets.QTableView()
-        model = PandasModel(self.solution_log['progress'])
+        model = PandasModel(self.solution_progress)
         self.view.setModel(model)
         self.view.resize(1000, 10000)
         self.view.show()
