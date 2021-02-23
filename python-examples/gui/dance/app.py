@@ -1,11 +1,14 @@
 import sys
 from PySide2 import QtWidgets, QtCore, QtGui
-from cornflow_client import CornFlow, group_variables_by_name
+from cornflow_client import CornFlow, group_variables_by_name, CornFlowApiError
 
 import os
 import logging
 import gui
 import model as md
+import logging as log
+import pandas as pd
+import json
 
 
 REFERENCE_ID_CODE = 256
@@ -17,6 +20,14 @@ class MainWindow_EXCEC():
 
     def __init__(self):
         self.app = QtWidgets.QApplication(sys.argv)
+        self.logger = log.getLogger('appLog')
+        logFormat = '%(asctime)s %(levelname)s:%(message)s'
+        formatter = log.Formatter(logFormat)
+        stderr_log_handler = log.StreamHandler()
+        stderr_log_handler.setFormatter(formatter)
+        _log = log.getLogger()
+        _log.handlers = [stderr_log_handler]
+
         MainWindow = QtWidgets.QMainWindow()
 
         # set icon
@@ -33,8 +44,13 @@ class MainWindow_EXCEC():
         self.instance_name = ''
         self.instance = None
         self.solution = None
+        self.solution_log = None
+        self.solution_progress = None
         self.client = None
         self.token = None
+        self.config = dict(threads=1)
+        self.ui.solver.insertItems(0, ['PULP_CBC_CMD', 'GUROBI_CMD', 'CPLEX_CMD'])
+        self.ui.maxTime.setText(str(100))
 
         self.update_ui()
 
@@ -55,14 +71,38 @@ class MainWindow_EXCEC():
         self.ui.signup.clicked.connect(self.signup)
         self.ui.login.clicked.connect(self.login)
         self.ui.logout.clicked.connect(self.logout)
+        self.ui.checkBoxDebug.clicked.connect(self.update_ui)
+
+        self.ui.instances.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        # self.ui.instances.customContextMenuRequested[QtCore.QPoint].connect(self.rightMenuShow)
+        self.get = QtWidgets.QAction(text='get')
+        self.get.triggered.connect(self.get_one_instance)
+        self.delete = QtWidgets.QAction(text='delete')
+        self.delete.triggered.connect(self.delete_one_instance)
+        self.ui.instances.addAction(self.delete)
+
+        self.ui.instances.addAction(self.get)
+        self.ui.instances.addAction(self.delete)
+
+        self.ui.solver.activated.connect(self.update_ui)
+        self.ui.maxTime.textEdited.connect(self.update_ui)
+
+        self.ui.showLog.clicked.connect(self.show_log)
+        self.ui.exportLog.clicked.connect(self.export_log_file)
+        # exportLog
 
         MainWindow.show()
         sys.exit(self.app.exec_())
 
-
     def update_ui(self):
 
         # we update labels with status:
+        try:
+            self.config['timeLimit'] = float(self.ui.maxTime.text())
+        except:
+            pass
+        self.config['solver'] = self.ui.solver.currentText()
+
         if self.instance is None:
             self.ui.instCheck.setText('No instance loaded')
             self.ui.instCheck.setStyleSheet(TEXT_LABEL_NOK)
@@ -88,7 +128,33 @@ class MainWindow_EXCEC():
             self.ui.username.setEnabled(True)
             self.ui.password.setEnabled(True)
             self.ui.server.setEnabled(True)
+        if self.ui.checkBoxDebug.isChecked():
+            level = log.DEBUG
+        else:
+            level = log.INFO
+        _log = log.getLogger()
+        _log.setLevel(level)
         return 1
+
+    def export_file(self, data_json):
+        QFileDialog = QtWidgets.QFileDialog
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName = QFileDialog.getSaveFileName(
+            caption="Choose a file to export",
+            dir=self.examplesDir,
+            options=options)
+        try:
+            fileName = fileName[0]
+        except IndexError:
+            return
+        self.save_file(fileName, data_json)
+        return True
+
+    def export_log_file(self):
+        if not self.solution_log:
+            return self.show_message('No log read', "No log was read from the solution :(")
+        self.export_file(self.solution_log)
 
     def choose_file(self):
         QFileDialog = QtWidgets.QFileDialog
@@ -146,31 +212,62 @@ class MainWindow_EXCEC():
             return self.show_message('Login first!', "You need to login before doing anything")
 
         instances = self.client.get_all_instances()
-        instances.sort(key=lambda v: v['created_at'])
-        # TODO: color if it has results
+        if instances is not None:
+            instances.sort(key=lambda v: v['created_at'])
 
-        #
         model = QtGui.QStandardItemModel(self.ui.instances)
         for inst in instances:
             item = QtGui.QStandardItem(inst['name'] + ' ' + inst['created_at'])
-            item.setData(inst['reference_id'], REFERENCE_ID_CODE)
-            item.setData(inst['executions'], EXECUTIONS_CODE)
-            green_brush = get_brush('green')
-            red_brush = get_brush('red')
-            if inst['executions']:
-                item.setForeground(green_brush)
-            else:
-                item.setForeground(red_brush)
+            item.setData(inst['id'], REFERENCE_ID_CODE)
+            # item.setData(inst['executions'], EXECUTIONS_CODE)
+            # self.update_row_inst(item, len(inst['executions']))
             model.appendRow(item)
-
         self.ui.instances.setModel(model)
+
+    @staticmethod
+    def update_row_inst(item, has_executions):
+        green_brush = get_brush('green')
+        red_brush = get_brush('red')
+        if has_executions:
+            item.setForeground(green_brush)
+        else:
+            item.setForeground(red_brush)
+
+    def get_one_instance(self):
+        item_id = self.ui.instances.currentIndex()
+        if not item_id.data(REFERENCE_ID_CODE):
+            return
+        instance_id = item_id.data(REFERENCE_ID_CODE)
+        inst = self.client.get_one_instance(instance_id)
+        item = self.ui.instances.model().itemFromIndex(item_id)
+        item.setData(inst['executions'], EXECUTIONS_CODE)
+        self.update_row_inst(item, len(inst['executions']))
+        self.get_executions()
+
+    def delete_one_instance(self):
+        item_id = self.ui.instances.currentIndex()
+        if not item_id.data(REFERENCE_ID_CODE):
+            return
+        instance_id = item_id.data(REFERENCE_ID_CODE)
+        result = self.client.delete_one_instance(instance_id)
+        if result.status_code == 200:
+            item = self.ui.instances.model().itemFromIndex(item_id)
+            self.ui.instances.model().removeRow(item.row())
+        else:
+            return self.show_message('Error in response', "The api returned an unexpected status: {}".format(result.status_code))
 
     def send_instance(self):
         if not self.token:
             return self.show_message('Login first!', "You need to login before doing anything")
+        if not self.instance:
+            self.show_message(title="Loading needed", text='No instance loaded, so not possible to solve.')
+            return
 
         lpmodel = md.build_model(self.instance, self.instance_name)
-        self.client.create_instance(lpmodel)
+        try:
+            self.client.create_instance(lpmodel)
+        except CornFlowApiError as e:
+            return self.show_message('Error in response', "The api returned an error: {}".format(e))
         self.get_instances()
         return True
 
@@ -178,41 +275,58 @@ class MainWindow_EXCEC():
         if not self.token:
             return self.show_message('Login first!', "You need to login before doing anything")
         instance = self.ui.instances.currentIndex()
-        if not instance.data(REFERENCE_ID_CODE):
+        instance_id = instance.data(REFERENCE_ID_CODE)
+        if not instance_id:
             return
         model = QtGui.QStandardItemModel(self.ui.executions)
-        executions = instance.data(EXECUTIONS_CODE)
+        details = self.client.get_one_instance(instance_id)
+        executions = details['executions']
         for exec in executions:
-            item = QtGui.QStandardItem(exec['created_at'])
-            item.setData(exec['reference_id'], REFERENCE_ID_CODE)
+            config = exec['config']
+            name = "{} +{} @ {}".format(config.get('solver', ''),
+                                       config.get('timeLimit', 0),
+                                       exec['created_at'])
+            item = QtGui.QStandardItem(name)
+            item.setData(exec['id'], REFERENCE_ID_CODE)
             green_brush = get_brush('green')
             red_brush = get_brush('red')
-            if exec['execution_results']:
-                item.setForeground(green_brush)
-            else:
-                item.setForeground(red_brush)
-
+            yellow_brush = get_brush('yellow')
+            colors = \
+                {1: green_brush,
+                 0: yellow_brush,}
+            color = colors.get(exec['state'], red_brush)
+            item.setForeground(color)
             model.appendRow(item)
-
         self.ui.executions.setModel(model)
 
     def get_results(self):
-        if not self.instance:
-            return self.show_message('Instance first!', "You need to load an instance first")
         execution = self.ui.executions.currentIndex()
-        if not execution.data(REFERENCE_ID_CODE):
-            return
         execution_id = execution.data(REFERENCE_ID_CODE)
+        if not execution_id:
+            return
         # QtCore.Qt.ItemDataRole.DisplayRole
         # QtCore.Qt.DisplayRole
-        response = self.client.get_results(execution_id)
-        if not response['execution_results']:
+        results = self.client.get_results(execution_id)
+        if results['state'] != 1:
             self.solution = None
             self.update_ui()
             return self.show_message('No results', "This execution has no solution (yet?)")
-        model_dict = response['execution_results']
+        response = self.client.get_solution(execution_id)
+        if not response['data']:
+            self.solution = None
+            self.update_ui()
+            return self.show_message('No results', "This execution has no solution (yet?)")
+        model_dict = response['data']
+        log_json = self.client.get_api_for_id('execution/', execution_id, 'log')
+        self.solution_log = log_json.json()['log']
+        self.solution_progress = self.progress_to_dataframe(log_progress=self.solution_log['progress'])
+
         self.solution = md.get_solution_from_model(model_dict)
         self.update_ui()
+
+    @staticmethod
+    def progress_to_dataframe(log_progress):
+        return pd.DataFrame.from_dict(log_progress)
 
     def show_message(self, title, text, icon='critical'):
         msg = QtWidgets.QMessageBox()
@@ -223,6 +337,21 @@ class MainWindow_EXCEC():
         msg.setWindowTitle(title)
         retval = msg.exec_()
         return
+
+    def save_file(self, fileName, data_json):
+        directory = os.path.dirname(fileName)
+        if not os.path.exists(directory):
+            self.show_message(title="No directory", text="The directory to the file needs to exist.")
+            return False
+        try:
+            with open(fileName, 'w') as f:
+                json.dump(data_json, f)
+        except Exception as e:
+            self.show_message(title="Error in file while writing",
+                              text="There's been an error writing the output file:\n{}.".format(e))
+            return False
+        return True
+        # with open
 
     def load_file(self, fileName):
 
@@ -244,23 +373,39 @@ class MainWindow_EXCEC():
     def solve_instance(self):
         if not self.token:
             return
-        config = dict(
-            solver="PULP_CBC_CMD",
-            timeLimit=10,
-        )
-        if not self.instance:
-            self.show_message(title="Loading needed", text='No instance loaded, so not possible to solve.')
-            return
+        config = self.config
         instance = self.ui.instances.currentIndex()
         if not instance.data(REFERENCE_ID_CODE):
+            self.show_message(title="Select instance", text='No instance selected to solve.')
             return
 
-        self.client.create_execution(instance.data(REFERENCE_ID_CODE), config)
+        try:
+            self.client.create_execution(instance.data(REFERENCE_ID_CODE), config)
+        except CornFlowApiError as e:
+            return self.show_message('Error in response', "The api returned an error: {}".format(e))
 
     def show_solution(self):
+        if not self.instance:
+            return self.show_message('Error showing solution', "You need to load an instance first!")
+        if not self.solution:
+            return self.show_message('Error showing solution', "You need to load a solution first!")
         md.graph_solution(self.instance, self.solution, path='path.png')
         self.solutionPicture = QtWidgets.QLabel(text="<img src='path.png' />")
         self.solutionPicture.show()
+
+    def show_log(self):
+        if not self.solution_log:
+            return self.show_message('No log read', "No log was read from the solution :(")
+        self.view = QtWidgets.QTableView()
+        model = PandasModel(self.solution_progress)
+        self.view.setModel(model)
+        self.view.resize(1000, 10000)
+        self.view.show()
+
+    def show_stats(self):
+        self.wid = QtWidgets.QWidget()
+        self.wid.resize(250, 150)
+        self.wid.setWindowTitle('Stats!')
 
 
 class QPlainTextEditLogger(logging.Handler):
@@ -272,6 +417,33 @@ class QPlainTextEditLogger(logging.Handler):
     def emit(self, record):
         msg = self.format(record)
         self.widget.append(msg)
+
+
+class PandasModel(QtCore.QAbstractTableModel):
+    """
+    Class to populate a table view with a pandas dataframe
+    """
+    def __init__(self, data, parent=None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
+        self._data = data
+
+    def rowCount(self, parent=None):
+        return self._data.shape[0]
+
+    def columnCount(self, parent=None):
+        return self._data.shape[1]
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return str(self._data.iloc[index.row(), index.column()])
+        return None
+
+    def headerData(self, col, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self._data.columns[col]
+        return None
+
 
 class ScrollMessageBox(QtWidgets.QMessageBox):
    def __init__(self, *args, **kwargs):
@@ -317,7 +489,7 @@ if __name__ == "__main__":
     # for pyside2:
     # Migration to pyside2:
     # https://www.learnpyqt.com/blog/pyqt5-vs-pyside2/
-    # pyside2-uic desktop_app/gui.ui -o desktop_app/gui.py
+    # pyside2-uic gui.ui -o gui.py
     MainWindow_EXCEC()
 
 
