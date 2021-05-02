@@ -1,0 +1,3 @@
+{
+  "CORNFLOW_URI": "http://airflow_test@admin.com:airflow_test_password@localhost:5000"
+}

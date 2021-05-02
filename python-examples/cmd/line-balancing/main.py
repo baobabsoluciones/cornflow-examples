@@ -49,15 +49,14 @@ def solve_problem(email, password, cornflow_url, data, debug, wait):
     model_data = generate_model(data)
 
     instance = client.create_instance(model_data)
-
+    print("Instance created with id: {}".format(instance['id']))
     solve_config = dict(
         solver="PULP_CBC_CMD",
         timeLimit=10,
     )
     execution = client.create_execution(instance['id'], solve_config)
+    print("Execution created with id: {}".format(execution['id']))
     if not wait:
-        print("Instance id is: {}".format(instance['id']))
-        print("Execution id is: {}".format(execution['id']))
         return
     _load_solution(client, execution['id'], debug, wait)
 
@@ -79,6 +78,9 @@ def load_solution(email, password, cornflow_url, execution_id, debug, wait):
 def _load_solution(client, execution_id, debug, wait):
 
     status = client.get_status(execution_id)
+    if 'error' in status:
+        print("There was an error getting the solution status: {}".format(status['error']))
+        return
     while not status['state'] != 0 :
         time.sleep(2)
         status = client.get_status(execution_id)

@@ -175,6 +175,9 @@
               <property name="text">
                <string>some_password</string>
               </property>
+              <property name="echoMode">
+               <enum>QLineEdit::Password</enum>
+              </property>
              </widget>
             </item>
            </layout>
@@ -342,7 +345,11 @@
              <number>5</number>
             </property>
             <item>
-             <widget class="QListView" name="executions"/>
+             <widget class="QListView" name="executions">
+              <property name="contextMenuPolicy">
+               <enum>Qt::NoContextMenu</enum>
+              </property>
+             </widget>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_5">

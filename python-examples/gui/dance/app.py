@@ -1,6 +1,7 @@
 import sys
 from PySide2 import QtWidgets, QtCore, QtGui
 from cornflow_client import CornFlow, group_variables_by_name, CornFlowApiError
+from urllib.parse import urlparse
 
 import os
 import logging
@@ -18,7 +19,9 @@ TEXT_LABEL_NOK = "QLabel { color : red; }"
 
 class MainWindow_EXCEC():
 
-    def __init__(self):
+    def __init__(self, options=None):
+        if options is None:
+            options = {}
         self.app = QtWidgets.QApplication(sys.argv)
         self.logger = log.getLogger('appLog')
         logFormat = '%(asctime)s %(levelname)s:%(message)s'
@@ -46,11 +49,21 @@ class MainWindow_EXCEC():
         self.solution = None
         self.solution_log = None
         self.solution_progress = None
-        self.client = None
-        self.token = None
+
+        self.ui.solver.insertItems(0, options.get('solvers', ['PULP_CBC_CMD', 'GUROBI_CMD', 'CPLEX_CMD']))
+        self.ui.maxTime.setText(str(options.get('timeLimit', 100)))
+
+        if 'CORNFLOW_URI' in options:
+            conn = urlparse(options['CORNFLOW_URI'])
+            url = '{uri.scheme}://{uri.hostname}'.format(uri=conn)
+            if conn.port:
+                url += ':{uri.port}'.format(uri=conn)
+            self.ui.server.setText(url)
+            self.ui.username.setText(conn.username)
+            self.ui.password.setText(conn.password)
+
+        self.client = CornFlow(url=self.ui.server.text())
         self.config = dict(threads=1)
-        self.ui.solver.insertItems(0, ['PULP_CBC_CMD', 'GUROBI_CMD', 'CPLEX_CMD'])
-        self.ui.maxTime.setText(str(100))
 
         self.update_ui()
 
@@ -64,7 +77,7 @@ class MainWindow_EXCEC():
         self.ui.solve_instance.clicked.connect(self.solve_instance)
         self.ui.get_instances.clicked.connect(self.get_instances)
 
-        self.ui.instances.clicked.connect(self.get_executions)
+        # self.ui.instances.clicked.connect(self.get_executions)
         self.ui.get_results.clicked.connect(self.get_results)
         self.ui.show_solution.clicked.connect(self.show_solution)
 
@@ -73,16 +86,29 @@ class MainWindow_EXCEC():
         self.ui.logout.clicked.connect(self.logout)
         self.ui.checkBoxDebug.clicked.connect(self.update_ui)
 
+        # context menu actions for instances:
         self.ui.instances.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-        # self.ui.instances.customContextMenuRequested[QtCore.QPoint].connect(self.rightMenuShow)
-        self.get = QtWidgets.QAction(text='get')
-        self.get.triggered.connect(self.get_one_instance)
-        self.delete = QtWidgets.QAction(text='delete')
-        self.delete.triggered.connect(self.delete_one_instance)
-        self.ui.instances.addAction(self.delete)
+        getInstance = QtWidgets.QAction(text='get')
+        getInstance.triggered.connect(self.get_one_instance)
+        self.ui.instances.addAction(getInstance)
 
-        self.ui.instances.addAction(self.get)
-        self.ui.instances.addAction(self.delete)
+        deleteInstance = QtWidgets.QAction(text='delete')
+        deleteInstance.triggered.connect(self.delete_one_instance)
+        self.ui.instances.addAction(deleteInstance)
+
+        # context menu actions for executions:
+        self.ui.executions.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        getExecution = QtWidgets.QAction(text='get')
+        getExecution.triggered.connect(self.get_one_execution)
+        self.ui.executions.addAction(getExecution)
+
+        deleteExecution = QtWidgets.QAction(text='delete')
+        deleteExecution.triggered.connect(self.delete_one_execution)
+        self.ui.executions.addAction(deleteExecution)
+
+        stopExecution = QtWidgets.QAction(text='stop')
+        stopExecution.triggered.connect(self.stop_one_execution)
+        self.ui.executions.addAction(stopExecution)
 
         self.ui.solver.activated.connect(self.update_ui)
         self.ui.maxTime.textEdited.connect(self.update_ui)
@@ -116,7 +142,7 @@ class MainWindow_EXCEC():
         else:
             self.ui.solCheck.setText('Solution loaded')
             self.ui.solCheck.setStyleSheet(TEXT_LABEL_OK)
-        if self.token:
+        if self.client is not None and self.client.token:
             self.ui.loginCheck.setText('Logged-in')
             self.ui.loginCheck.setStyleSheet(TEXT_LABEL_OK)
             self.ui.username.setEnabled(False)
@@ -192,12 +218,11 @@ class MainWindow_EXCEC():
         if not self.ui.server.text():
             return self.show_message('Fill above', "You need to provide a server name")
         self.client = CornFlow(url=self.ui.server.text())
-        self.token = self.client.login(self.ui.username.text(), self.ui.password.text())
+        self.client.login(self.ui.username.text(), self.ui.password.text())
         self.get_instances()
         self.update_ui()
 
     def logout(self):
-        self.token = None
         self.client = None
         self.instance  = None
         self.solution = None
@@ -208,10 +233,11 @@ class MainWindow_EXCEC():
         self.update_ui()
 
     def get_instances(self):
-        if not self.token:
-            return self.show_message('Login first!', "You need to login before doing anything")
+        try:
+            instances = self.client.get_all_instances()
+        except CornFlowApiError as e:
+            return self.show_message('Error in response', "{}".format(e))
 
-        instances = self.client.get_all_instances()
         if instances is not None:
             instances.sort(key=lambda v: v['created_at'])
 
@@ -244,6 +270,41 @@ class MainWindow_EXCEC():
         self.update_row_inst(item, len(inst['executions']))
         self.get_executions()
 
+    def get_one_execution(self):
+        item_id = self.ui.executions.currentIndex()
+        if not item_id.data(REFERENCE_ID_CODE):
+            return
+        _id = item_id.data(REFERENCE_ID_CODE)
+        obj = self.client.get_status(_id)
+        item = self.ui.executions.model().itemFromIndex(item_id)
+        item = self.update_exec_item(item, obj)
+
+    def delete_one_execution(self):
+        item_id = self.ui.executions.currentIndex()
+        if not item_id.data(REFERENCE_ID_CODE):
+            return
+        _id = item_id.data(REFERENCE_ID_CODE)
+        result = self.client.delete_api_for_id('execution/', _id)
+        if result.status_code == 200:
+            item = self.ui.executions.model().itemFromIndex(item_id)
+            self.ui.executions.model().removeRow(item.row())
+        else:
+            return self.show_message('Error in response', "The api returned an unexpected status: {}".format(result.status_code))
+
+    def stop_one_execution(self):
+        item_id = self.ui.executions.currentIndex()
+        if not item_id.data(REFERENCE_ID_CODE):
+            return
+        _id = item_id.data(REFERENCE_ID_CODE)
+        obj = self.client.get_status(_id)
+        result = self.client.delete_api_for_id('execution/', _id)
+        if result.status_code == 200:
+            item = self.ui.executions.model().itemFromIndex(item_id)
+            self.ui.executions.model().removeRow(item.row())
+        else:
+            return self.show_message('Error in response', "The api returned an unexpected status: {}".format(result.status_code))
+
+
     def delete_one_instance(self):
         item_id = self.ui.instances.currentIndex()
         if not item_id.data(REFERENCE_ID_CODE):
@@ -257,8 +318,6 @@ class MainWindow_EXCEC():
             return self.show_message('Error in response', "The api returned an unexpected status: {}".format(result.status_code))
 
     def send_instance(self):
-        if not self.token:
-            return self.show_message('Login first!', "You need to login before doing anything")
         if not self.instance:
             self.show_message(title="Loading needed", text='No instance loaded, so not possible to solve.')
             return
@@ -267,19 +326,20 @@ class MainWindow_EXCEC():
         try:
             self.client.create_instance(lpmodel)
         except CornFlowApiError as e:
-            return self.show_message('Error in response', "The api returned an error: {}".format(e))
+            return self.show_message('Error in response', "{}".format(e))
         self.get_instances()
         return True
 
     def get_executions(self):
-        if not self.token:
-            return self.show_message('Login first!', "You need to login before doing anything")
         instance = self.ui.instances.currentIndex()
         instance_id = instance.data(REFERENCE_ID_CODE)
         if not instance_id:
             return
         model = QtGui.QStandardItemModel(self.ui.executions)
-        details = self.client.get_one_instance(instance_id)
+        try:
+            details = self.client.get_one_instance(instance_id)
+        except CornFlowApiError as e:
+            return self.show_message('Error in response', "{}".format(e))
         executions = details['executions']
         for exec in executions:
             config = exec['config']
@@ -287,17 +347,22 @@ class MainWindow_EXCEC():
                                        config.get('timeLimit', 0),
                                        exec['created_at'])
             item = QtGui.QStandardItem(name)
-            item.setData(exec['id'], REFERENCE_ID_CODE)
-            green_brush = get_brush('green')
-            red_brush = get_brush('red')
-            yellow_brush = get_brush('yellow')
-            colors = \
-                {1: green_brush,
-                 0: yellow_brush,}
-            color = colors.get(exec['state'], red_brush)
-            item.setForeground(color)
+            item = self.update_exec_item(item, exec)
             model.appendRow(item)
         self.ui.executions.setModel(model)
+
+    def update_exec_item(self, item, exec):
+        item.setData(exec['id'], REFERENCE_ID_CODE)
+        green_brush = get_brush('green')
+        red_brush = get_brush('red')
+        yellow_brush = get_brush('yellow')
+        colors = \
+            {1: green_brush,
+             2: green_brush,
+             0: yellow_brush, }
+        color = colors.get(exec['state'], red_brush)
+        item.setForeground(color)
+        return item
 
     def get_results(self):
         execution = self.ui.executions.currentIndex()
@@ -306,8 +371,11 @@ class MainWindow_EXCEC():
             return
         # QtCore.Qt.ItemDataRole.DisplayRole
         # QtCore.Qt.DisplayRole
-        results = self.client.get_results(execution_id)
-        if results['state'] != 1:
+        try:
+            results = self.client.get_results(execution_id)
+        except CornFlowApiError as e:
+            return self.show_message('Error in response', "{}".format(e))
+        if results['state'] <= 0:
             self.solution = None
             self.update_ui()
             return self.show_message('No results', "This execution has no solution (yet?)")
@@ -371,8 +439,6 @@ class MainWindow_EXCEC():
         return True
 
     def solve_instance(self):
-        if not self.token:
-            return
         config = self.config
         instance = self.ui.instances.currentIndex()
         if not instance.data(REFERENCE_ID_CODE):
@@ -382,7 +448,7 @@ class MainWindow_EXCEC():
         try:
             self.client.create_execution(instance.data(REFERENCE_ID_CODE), config)
         except CornFlowApiError as e:
-            return self.show_message('Error in response', "The api returned an error: {}".format(e))
+            return self.show_message('Error in response', "{}".format(e))
 
     def show_solution(self):
         if not self.instance:
@@ -489,8 +555,20 @@ if __name__ == "__main__":
     # for pyside2:
     # Migration to pyside2:
     # https://www.learnpyqt.com/blog/pyqt5-vs-pyside2/
-    # pyside2-uic gui.ui -o gui.py
-    MainWindow_EXCEC()
+    # pyside2-uic gui/dance/gui.ui -o gui/dance/gui.py
+    options_file = 'options.json'
+    options = {}
+    if os.path.exists(options_file):
+        with open(options_file, 'r') as f:
+            options = json.load(f)
+    MainWindow_EXCEC(options)
 
 
-
+"""
+{
+  "CORNFLOW_URI": "https://user@cornflow.com:cornflow1234@cipp.cornflow.baobabsoluciones.app"
+  "CORNFLOW_URI": "http://airflow_test@admin.com:airflow_test_password@localhost:5000"
+  "CORNFLOW_URI": "http://some_email@gmail.com:some_password@localhost:5000"
+  "CORNFLOW_URI": "https://some_email@gmail.com:some_password@devsm.cornflow.baobabsoluciones.app/"
+}
+"""

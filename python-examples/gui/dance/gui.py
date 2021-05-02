@@ -118,6 +118,7 @@ class Ui_MainWindow(object):
 
         self.password = QLineEdit(self.Config)
         self.password.setObjectName(u"password")
+        self.password.setEchoMode(QLineEdit.Password)
 
         self.formLayout.setWidget(2, QFormLayout.FieldRole, self.password)
 
@@ -224,6 +225,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_6.setContentsMargins(5, 5, 5, 5)
         self.executions = QListView(self.Config)
         self.executions.setObjectName(u"executions")
+        self.executions.setContextMenuPolicy(Qt.NoContextMenu)
 
         self.verticalLayout_6.addWidget(self.executions)
 
